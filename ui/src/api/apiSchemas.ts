@@ -67,6 +67,12 @@ export type RegisterOUT = {
   apiKey: string;
 };
 
+export type TravelOUT = {
+  from: string;
+  to: string;
+  using: string;
+};
+
 export type UpdateUserIN = {
   login: string;
   email: string;

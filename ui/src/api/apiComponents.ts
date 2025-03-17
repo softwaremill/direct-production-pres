@@ -390,6 +390,46 @@ export const useGetAdminVersion = <TData = Schemas.VersionOUT,>(
   });
 };
 
+export type PostTravelNextError = Fetcher.ErrorWrapper<{
+  status: Exclude<ClientErrorStatus | ServerErrorStatus, 200>;
+  payload: Schemas.ErrorOUT;
+}>;
+
+export type PostTravelNextVariables = ApiContext["fetcherOptions"];
+
+export const fetchPostTravelNext = (
+  variables: PostTravelNextVariables,
+  signal?: AbortSignal,
+) =>
+  apiFetch<Schemas.TravelOUT, PostTravelNextError, undefined, {}, {}, {}>({
+    url: "/travel/next",
+    method: "post",
+    ...variables,
+    signal,
+  });
+
+export const usePostTravelNext = (
+  options?: Omit<
+    reactQuery.UseMutationOptions<
+      Schemas.TravelOUT,
+      PostTravelNextError,
+      PostTravelNextVariables
+    >,
+    "mutationFn"
+  >,
+) => {
+  const { fetcherOptions } = useApiContext();
+  return reactQuery.useMutation<
+    Schemas.TravelOUT,
+    PostTravelNextError,
+    PostTravelNextVariables
+  >({
+    mutationFn: (variables: PostTravelNextVariables) =>
+      fetchPostTravelNext({ ...fetcherOptions, ...variables }),
+    ...options,
+  });
+};
+
 export type QueryOperation =
   | {
       path: "/user";

@@ -5,3 +5,4 @@ export * from './RecoverLostPassword/RecoverLostPassword';
 export * from './Register/Register';
 export * from './SecretMain/SecretMain';
 export * from './Welcome/Welcome';
+export * from './Trip/Trip';

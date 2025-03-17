@@ -7,6 +7,7 @@ import {
   SecretMain,
   Profile,
   NotFound,
+  Trip,
 } from 'pages';
 import { ProtectedRoute } from './ProtectedRoute';
 
@@ -24,6 +25,8 @@ export const Routes: React.FC = () => (
       <Route path="/main" element={<SecretMain />} />
       <Route path="/profile" element={<Profile />} />
     </Route>
+
+    <Route path="/trip" element={<Trip />} />
 
     <Route path="*" element={<NotFound />} />
   </RouterRoutes>

@@ -1,25 +1,30 @@
 package scalar.directdemo.services
 
+import com.github.plokhotnyuk.jsoniter_scala.core.JsonValueCodec
+import com.github.plokhotnyuk.jsoniter_scala.macros.JsonCodecMaker
 import io.opentelemetry.sdk.autoconfigure.AutoConfiguredOpenTelemetrySdk
 import ox.OxApp.Settings
 import ox.logback.InheritableMDC
 import ox.otel.context.PropagatingVirtualThreadFactory
 import ox.{Ox, OxApp, never, sleep}
-import scalar.directdemo.Main.logger
 import scalar.directdemo.infrastructure.SetTraceIdInMDCInterceptor
 import scalar.directdemo.logging.Logging
 import sttp.tapir.*
+import sttp.tapir.json.jsoniter.jsonBody
 import sttp.tapir.server.netty.NettyConfig
 import sttp.tapir.server.netty.sync.{NettySyncServer, NettySyncServerOptions}
 import sttp.tapir.server.tracing.opentelemetry.OpenTelemetryTracing
 
 import scala.concurrent.duration.*
+import scala.util.Random
 
-object Service2 extends OxApp.Simple with Logging:
+object PickRandomService extends OxApp.Simple with Logging:
   InheritableMDC.init
   Thread.setDefaultUncaughtExceptionHandler((t, e) => logger.error("Uncaught exception in thread: " + t, e))
 
   override protected def settings: Settings = Settings.Default.copy(threadFactory = PropagatingVirtualThreadFactory())
+
+  given JsonValueCodec[List[String]] = JsonCodecMaker.make[List[String]]
 
   override def run(using Ox): Unit =
     val otel = AutoConfiguredOpenTelemetrySdk.initialize().getOpenTelemetrySdk
@@ -29,16 +34,16 @@ object Service2 extends OxApp.Simple with Logging:
       .prependInterceptor(SetTraceIdInMDCInterceptor)
       .options
 
-    val workEndpoint = endpoint.post
-      .in("work2")
+    val pickRandomEndpoint = infallibleEndpoint.post
+      .in("pick")
+      .in(jsonBody[List[String]])
       .out(stringBody)
-      .handle { _ =>
-        sleep(1.second)
-        Right("ok2")
-      }
+      .handleSuccess: choices =>
+        sleep(50.millis)
+        Random.shuffle(choices).head
 
-    NettySyncServer(serverOptions, NettyConfig.default.host("localhost").port(8071)).addEndpoint(workEndpoint).start()
+    NettySyncServer(serverOptions, NettyConfig.default.host("localhost").port(8070)).addEndpoint(pickRandomEndpoint).start()
 
-    logger.info(s"Service2 started")
+    logger.info(s"Pick random started")
 
     never
