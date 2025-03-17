@@ -18,7 +18,7 @@ object Main extends OxApp.Simple with Logging:
   Thread.setDefaultUncaughtExceptionHandler((t, e) => logger.error("Uncaught exception in thread: " + t, e))
 
   // https://ox.softwaremill.com/latest/integrations/otel-context.html
-  override protected def settings: Settings = Settings.Default.copy(threadFactory = PropagatingVirtualThreadFactory())
+  override protected def settings: Settings = Settings.Default.copy(threadFactory = Some(PropagatingVirtualThreadFactory()))
 
   override def run(using Ox): Unit =
     val deps = Dependencies.create

@@ -19,7 +19,7 @@ object TravelModeService extends OxApp.Simple with Logging:
   InheritableMDC.init
   Thread.setDefaultUncaughtExceptionHandler((t, e) => logger.error("Uncaught exception in thread: " + t, e))
 
-  override protected def settings: Settings = Settings.Default.copy(threadFactory = PropagatingVirtualThreadFactory())
+  override protected def settings: Settings = Settings.Default.copy(threadFactory = Some(PropagatingVirtualThreadFactory()))
 
   override def run(using Ox): Unit =
     val otel = AutoConfiguredOpenTelemetrySdk.initialize().getOpenTelemetrySdk

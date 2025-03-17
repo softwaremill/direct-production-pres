@@ -22,7 +22,7 @@ object PickRandomService extends OxApp.Simple with Logging:
   InheritableMDC.init
   Thread.setDefaultUncaughtExceptionHandler((t, e) => logger.error("Uncaught exception in thread: " + t, e))
 
-  override protected def settings: Settings = Settings.Default.copy(threadFactory = PropagatingVirtualThreadFactory())
+  override protected def settings: Settings = Settings.Default.copy(threadFactory = Some(PropagatingVirtualThreadFactory()))
 
   given JsonValueCodec[List[String]] = JsonCodecMaker.make[List[String]]
 
