@@ -17,14 +17,14 @@ import io.opentelemetry.instrumentation.logback.appender.v1_0.OpenTelemetryAppen
 import io.opentelemetry.instrumentation.runtimemetrics.java8.{Classes, Cpu, GarbageCollector, MemoryPools, Threads}
 import io.opentelemetry.sdk.autoconfigure.AutoConfiguredOpenTelemetrySdk
 import ox.{Ox, discard, tap, useCloseableInScope, useInScope}
-import scalar.directdemo.travel.TravelApi
+import scalar.directdemo.travel.{StreamToKafkaService, TravelApi}
 import sttp.client4.SyncBackend
 import sttp.client4.httpclient.HttpClientSyncBackend
 import sttp.client4.logging.slf4j.Slf4jLoggingBackend
 import sttp.client4.opentelemetry.{OpenTelemetryMetricsBackend, OpenTelemetryTracingSyncBackend}
 import sttp.tapir.AnyEndpoint
 
-case class Dependencies(httpApi: HttpApi, emailService: EmailService)
+case class Dependencies(httpApi: HttpApi, emailService: EmailService, streamToKafkaService: StreamToKafkaService)
 
 object Dependencies:
   val endpointsForDocs: List[AnyEndpoint] = List(UserApi, PasswordResetApi, VersionApi, TravelApi).flatMap(_.endpointsForDocs)

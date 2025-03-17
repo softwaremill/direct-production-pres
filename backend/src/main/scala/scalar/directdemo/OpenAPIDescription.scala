@@ -6,7 +6,7 @@ import sttp.tapir.docs.openapi.OpenAPIDocsInterpreter
 import java.nio.file.*
 
 object OpenAPIDescription:
-  val Title = "Directdemo"
+  val Title = "Scalar Direct-style Scala Demo"
   val Version = "1.0"
 
 @main def writeOpenAPIDescription(path: String): Unit =

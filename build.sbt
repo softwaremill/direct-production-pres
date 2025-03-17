@@ -84,6 +84,10 @@ val testingDependencies = Seq(
   "com.opentable.components" % "otj-pg-embedded" % "1.1.0" % Test
 )
 
+val kafkaDependencies = Seq(
+  "com.softwaremill.ox" %% "kafka" % "0.5.13"
+)
+
 lazy val uiProjectName = "ui"
 lazy val uiDirectory = settingKey[File]("Path to the ui project directory")
 lazy val updateYarn = taskKey[Unit]("Update yarn")
@@ -182,7 +186,8 @@ lazy val backend: Project = (project in file("backend"))
   .settings(
     libraryDependencies ++= baseDependencies ++ testingDependencies ++ loggingDependencies ++
       configDependencies ++ dbDependencies ++ httpDependencies ++ jsonDependencies ++
-      apiDocsDependencies ++ observabilityDependencies ++ securityDependencies ++ emailDependencies,
+      apiDocsDependencies ++ observabilityDependencies ++ securityDependencies ++ emailDependencies ++
+      kafkaDependencies,
     Compile / mainClass := Some("scalar.directdemo.Main"),
     // generates the target/openapi.yaml file which is then used by the UI to generate service stubs
     generateOpenAPIDescription := Def.taskDyn {

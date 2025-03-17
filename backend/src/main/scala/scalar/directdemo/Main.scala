@@ -25,7 +25,8 @@ object Main extends OxApp.Simple with Logging:
 
     deps.emailService.startProcesses()
     deps.httpApi.start()
-    logger.info(s"Directdemo started")
+    deps.streamToKafkaService.start()
+    logger.info(s"Scalar Direct-style Scala Demo started")
 
     // blocking until the application is shut down
     never
