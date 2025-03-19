@@ -2,7 +2,7 @@ package pres
 
 import sttp.model.Uri.*
 
-class S080_How_to_start:
+class S090_How_to_start:
   /* Also a significant effort in the past year. */
 
   val TapirExamples = uri"https://tapir.softwaremill.com/en/latest/examples.html"

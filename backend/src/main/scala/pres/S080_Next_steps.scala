@@ -1,6 +1,6 @@
 package pres
 
-class S070_Next_steps:
+class S080_Next_steps:
   val TODO = List(
     "release sttp-client 4",
     "fully integrate Ox-streams with Tapir",
