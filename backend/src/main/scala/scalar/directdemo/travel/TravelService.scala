@@ -25,8 +25,12 @@ class TravelService(backend: SyncBackend, idGenerator: IdGenerator, clock: Clock
     val cities = citiesRepo.findAll.toList
 
     val destinationRequest =
-      basicRequest.post(uri"http://localhost:8070/pick").body(asJson(cities.map(_.name))).response(asStringOrFail)
-    val travelModeRequest = basicRequest.get(uri"http://localhost:8071/travel_mode/random").response(asStringOrFail)
+      basicRequest
+        .post(uri"http://localhost:8070/pick")
+        .body(asJson(cities.map(_.name)))
+        .response(asStringOrFail)
+    val travelModeRequest =
+      basicRequest.get(uri"http://localhost:8071/travel_mode/random").response(asStringOrFail)
 
     val (to, mode) = par(
       destinationRequest.send(backend).body,

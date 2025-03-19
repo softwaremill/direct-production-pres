@@ -24,13 +24,18 @@ class DB(dataSource: DataSource & Closeable) extends Logging with AutoCloseable:
     sqlLogger = SqlLogger.logSlowQueries(200.millis)
   )
 
-  /** Runs `f` in a transaction. The transaction is commited if the result is a [[Right]], and rolled back otherwise. */
+  /** Runs `f` in a transaction. The transaction is commited if the result is a [[Right]], and
+    * rolled back otherwise.
+    */
   def transactEither[E, T](f: DbTx ?=> Either[E, T]): Either[E, T] =
-    try com.augustnagro.magnum.transact(transactor)(Right(f.fold(e => throw LeftException(e), identity)))
+    try
+      com.augustnagro.magnum.transact(transactor)(
+        Right(f.fold(e => throw LeftException(e), identity))
+      )
     catch case e: LeftException[E] @unchecked => Left(e.left)
 
-  /** Runs `f` in a transaction. The result cannot be an `Either`, as then [[transactEither]] should be used. The transaction is commited if
-    * no exception is thrown.
+  /** Runs `f` in a transaction. The result cannot be an `Either`, as then [[transactEither]] should
+    * be used. The transaction is commited if no exception is thrown.
     */
   def transact[T](f: DbTx ?=> T)(using NotGiven[T <:< Either[?, ?]]): T =
     com.augustnagro.magnum.transact(transactor)(f)

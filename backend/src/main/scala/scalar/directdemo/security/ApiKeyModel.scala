@@ -14,7 +14,8 @@ class ApiKeyModel:
 
   def insert(apiKey: ApiKey)(using DbTx): Unit = apiKeyRepo.insert(apiKey)
   def findById(id: Id[ApiKey])(using DbTx): Option[ApiKey] = apiKeyRepo.findById(id)
-  def deleteAllForUser(id: Id[User])(using DbTx): Unit = sql"""DELETE FROM $a WHERE ${a.userId} = $id""".update.run().discard
+  def deleteAllForUser(id: Id[User])(using DbTx): Unit =
+    sql"""DELETE FROM $a WHERE ${a.userId} = $id""".update.run().discard
   def delete(id: Id[ApiKey])(using DbTx): Unit = apiKeyRepo.deleteById(id)
 
 @Table(PostgresDbType, SqlNameMapper.CamelToSnakeCase)

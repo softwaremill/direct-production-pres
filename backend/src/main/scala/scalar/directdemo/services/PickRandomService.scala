@@ -20,9 +20,12 @@ import scala.util.Random
 
 object PickRandomService extends OxApp.Simple with Logging:
   InheritableMDC.init
-  Thread.setDefaultUncaughtExceptionHandler((t, e) => logger.error("Uncaught exception in thread: " + t, e))
+  Thread.setDefaultUncaughtExceptionHandler((t, e) =>
+    logger.error("Uncaught exception in thread: " + t, e)
+  )
 
-  override protected def settings: Settings = Settings.Default.copy(threadFactory = Some(PropagatingVirtualThreadFactory()))
+  override protected def settings: Settings =
+    Settings.Default.copy(threadFactory = Some(PropagatingVirtualThreadFactory()))
 
   given JsonValueCodec[List[String]] = JsonCodecMaker.make[List[String]]
 
@@ -42,7 +45,9 @@ object PickRandomService extends OxApp.Simple with Logging:
         sleep(50.millis)
         Random.shuffle(choices).head
 
-    NettySyncServer(serverOptions, NettyConfig.default.host("localhost").port(8070)).addEndpoint(pickRandomEndpoint).start()
+    NettySyncServer(serverOptions, NettyConfig.default.host("localhost").port(8070))
+      .addEndpoint(pickRandomEndpoint)
+      .start()
 
     logger.info(s"Pick random started")
 

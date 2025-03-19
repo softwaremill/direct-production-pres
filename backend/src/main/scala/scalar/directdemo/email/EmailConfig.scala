@@ -25,5 +25,11 @@ case class SmtpConfig(
     encoding: String
 ) derives ConfigReader
 
-case class MailgunConfig(enabled: Boolean, apiKey: Sensitive, url: String, domain: String, senderName: String, senderDisplayName: String)
-    derives ConfigReader
+case class MailgunConfig(
+    enabled: Boolean,
+    apiKey: Sensitive,
+    url: String,
+    domain: String,
+    senderName: String,
+    senderDisplayName: String
+) derives ConfigReader

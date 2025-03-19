@@ -2,6 +2,18 @@ package pres
 
 class S020_OSS_at_SoftwareMill:
 
+  val OSS = List(
+    "sttp-client",
+    "tapir",
+    "magnolia",
+    "macwire",
+    "ox",
+    "elasticmq",
+    "quicklens",
+    "jox",
+    "apache struts"
+  )
+
   /*
 
    Our most popular OSS projects: sttp-client and Tapir support all popular approaches

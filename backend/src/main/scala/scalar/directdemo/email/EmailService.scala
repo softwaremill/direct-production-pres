@@ -10,7 +10,9 @@ import ox.{Fork, Ox, discard, forever, fork, sleep}
 
 import scala.util.control.NonFatal
 
-/** Schedules emails to be sent asynchronously, in the background, as well as manages sending of emails in batches. */
+/** Schedules emails to be sent asynchronously, in the background, as well as manages sending of
+  * emails in batches.
+  */
 class EmailService(
     emailModel: EmailModel,
     idGenerator: IdGenerator,
@@ -32,8 +34,8 @@ class EmailService(
     emails.map(_.data).foreach(emailSender.apply)
     db.transact(emailModel.delete(emails.map(_.id)))
 
-  /** Starts an asynchronous process which attempts to send batches of emails in defined intervals, as well as updates a metric which holds
-    * the size of the email queue.
+  /** Starts an asynchronous process which attempts to send batches of emails in defined intervals,
+    * as well as updates a metric which holds the size of the email queue.
     */
   def startProcesses()(using Ox): Unit =
     foreverPeriodically("Exception when sending emails") {

@@ -13,8 +13,9 @@ import scalar.directdemo.http.ServerEndpoints
 class VersionApi extends ServerEndpoints:
   import VersionApi._
 
-  private val versionServerEndpoint: ServerEndpoint[Any, Identity] = versionEndpoint.handleSuccess { _ =>
-    Version_OUT(BuildInfo.lastCommitHash)
+  private val versionServerEndpoint: ServerEndpoint[Any, Identity] = versionEndpoint.handleSuccess {
+    _ =>
+      Version_OUT(BuildInfo.lastCommitHash)
   }
 
   override val endpoints = List(versionServerEndpoint)

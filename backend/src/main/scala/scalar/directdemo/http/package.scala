@@ -5,10 +5,11 @@ import sttp.tapir.AnyEndpoint
 import sttp.tapir.server.ServerEndpoint
 
 trait EndpointsForDocs:
-  /** The list of endpoints which should appear in the generated OpenAPI description (used for docs and to generate frontend code).
+  /** The list of endpoints which should appear in the generated OpenAPI description (used for docs
+    * and to generate frontend code).
     *
-    * Usually, each endpoint should have the same [[sttp.tapir.Endpoint.tag]], and corresponds to exactly one endpoint defined in
-    * [[ServerEndpoints.endpoints]].
+    * Usually, each endpoint should have the same [[sttp.tapir.Endpoint.tag]], and corresponds to
+    * exactly one endpoint defined in [[ServerEndpoints.endpoints]].
     */
   def endpointsForDocs: List[AnyEndpoint]
 

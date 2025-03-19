@@ -4,10 +4,16 @@ import scalar.directdemo.logging.Logging
 import io.opentelemetry.api.trace.Span
 import ox.logback.InheritableMDC
 import sttp.shared.Identity
-import sttp.tapir.server.interceptor.{EndpointInterceptor, RequestHandler, RequestInterceptor, Responder}
+import sttp.tapir.server.interceptor.{
+  EndpointInterceptor,
+  RequestHandler,
+  RequestInterceptor,
+  Responder
+}
 
-/** A Tapir interceptor, which sets the current trace id in the MDC, so that the logs that are printed to the console can be easily
-  * correlated as well. This interceptor should come after the OpenTelemetry tracing interceptor.
+/** A Tapir interceptor, which sets the current trace id in the MDC, so that the logs that are
+  * printed to the console can be easily correlated as well. This interceptor should come after the
+  * OpenTelemetry tracing interceptor.
   */
 object SetTraceIdInMDCInterceptor extends RequestInterceptor[Identity] with Logging:
   val MDCKey = "traceId"

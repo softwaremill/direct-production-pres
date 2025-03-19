@@ -13,8 +13,13 @@ import pureconfig.generic.derivation.default.*
 import scala.collection.immutable.TreeMap
 
 /** Maps to the `application.conf` file. Configuration for all modules of the application. */
-case class Config(db: DBConfig, api: HttpConfig, email: EmailConfig, passwordReset: PasswordResetConfig, user: UserConfig)
-    derives ConfigReader
+case class Config(
+    db: DBConfig,
+    api: HttpConfig,
+    email: EmailConfig,
+    passwordReset: PasswordResetConfig,
+    user: UserConfig
+) derives ConfigReader
 
 object Config extends Logging:
   def log(config: Config): Unit =

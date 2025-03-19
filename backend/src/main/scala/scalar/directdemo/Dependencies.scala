@@ -14,7 +14,13 @@ import scalar.directdemo.util.{Clock, DefaultClock, DefaultIdGenerator, IdGenera
 import com.softwaremill.macwire.{autowire, autowireMembersOf}
 import io.opentelemetry.api.OpenTelemetry
 import io.opentelemetry.instrumentation.logback.appender.v1_0.OpenTelemetryAppender
-import io.opentelemetry.instrumentation.runtimemetrics.java8.{Classes, Cpu, GarbageCollector, MemoryPools, Threads}
+import io.opentelemetry.instrumentation.runtimemetrics.java8.{
+  Classes,
+  Cpu,
+  GarbageCollector,
+  MemoryPools,
+  Threads
+}
 import io.opentelemetry.sdk.autoconfigure.AutoConfiguredOpenTelemetrySdk
 import ox.{Ox, discard, tap, useCloseableInScope, useInScope}
 import scalar.directdemo.travel.{StreamToKafkaService, TravelApi}
@@ -24,26 +30,47 @@ import sttp.client4.logging.slf4j.Slf4jLoggingBackend
 import sttp.client4.opentelemetry.{OpenTelemetryMetricsBackend, OpenTelemetryTracingSyncBackend}
 import sttp.tapir.AnyEndpoint
 
-case class Dependencies(httpApi: HttpApi, emailService: EmailService, streamToKafkaService: StreamToKafkaService)
+case class Dependencies(
+    httpApi: HttpApi,
+    emailService: EmailService,
+    streamToKafkaService: StreamToKafkaService
+)
 
 object Dependencies:
-  val endpointsForDocs: List[AnyEndpoint] = List(UserApi, PasswordResetApi, VersionApi, TravelApi).flatMap(_.endpointsForDocs)
+  val endpointsForDocs: List[AnyEndpoint] =
+    List(UserApi, PasswordResetApi, VersionApi, TravelApi).flatMap(_.endpointsForDocs)
 
-  private case class Apis(userApi: UserApi, passwordResetApi: PasswordResetApi, versionApi: VersionApi, travelApi: TravelApi):
+  private case class Apis(
+      userApi: UserApi,
+      passwordResetApi: PasswordResetApi,
+      versionApi: VersionApi,
+      travelApi: TravelApi
+  ):
     def endpoints = List(userApi, passwordResetApi, versionApi, travelApi).flatMap(_.endpoints)
 
   def create(using Ox): Dependencies =
     val config = Config.read.tap(Config.log)
     val otel = initializeOtel()
     val sttpBackend = useInScope(
-      Slf4jLoggingBackend(OpenTelemetryMetricsBackend(OpenTelemetryTracingSyncBackend(HttpClientSyncBackend(), otel), otel))
+      Slf4jLoggingBackend(
+        OpenTelemetryMetricsBackend(
+          OpenTelemetryTracingSyncBackend(HttpClientSyncBackend(), otel),
+          otel
+        )
+      )
     )(_.close())
     val db: DB = useCloseableInScope(DB.createTestMigrate(config.db))
 
     create(config, otel, sttpBackend, db, DefaultClock)
 
   /** Create the service graph using the given infrastructure services & configuration. */
-  def create(config: Config, otel: OpenTelemetry, sttpBackend: SyncBackend, db: DB, clock: Clock): Dependencies =
+  def create(
+      config: Config,
+      otel: OpenTelemetry,
+      sttpBackend: SyncBackend,
+      db: DB,
+      clock: Clock
+  ): Dependencies =
     autowire[Dependencies](
       autowireMembersOf(config),
       otel,

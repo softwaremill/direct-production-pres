@@ -17,9 +17,12 @@ import scala.util.Random
 
 object TravelModeService extends OxApp.Simple with Logging:
   InheritableMDC.init
-  Thread.setDefaultUncaughtExceptionHandler((t, e) => logger.error("Uncaught exception in thread: " + t, e))
+  Thread.setDefaultUncaughtExceptionHandler((t, e) =>
+    logger.error("Uncaught exception in thread: " + t, e)
+  )
 
-  override protected def settings: Settings = Settings.Default.copy(threadFactory = Some(PropagatingVirtualThreadFactory()))
+  override protected def settings: Settings =
+    Settings.Default.copy(threadFactory = Some(PropagatingVirtualThreadFactory()))
 
   override def run(using Ox): Unit =
     val otel = AutoConfiguredOpenTelemetrySdk.initialize().getOpenTelemetrySdk
@@ -38,7 +41,9 @@ object TravelModeService extends OxApp.Simple with Logging:
         sleep(100.millis)
         Random.shuffle(travelModes).head
 
-    NettySyncServer(serverOptions, NettyConfig.default.host("localhost").port(8071)).addEndpoint(workEndpoint).start()
+    NettySyncServer(serverOptions, NettyConfig.default.host("localhost").port(8071))
+      .addEndpoint(workEndpoint)
+      .start()
 
     logger.info(s"Travel mode started")
 

@@ -26,4 +26,6 @@ object TravelApi extends EndpointsForDocs:
 
   //
 
-  case class Travel_OUT(from: String, to: String, using: String) derives ConfiguredJsonValueCodec, Schema
+  case class Travel_OUT(from: String, to: String, using: String)
+      derives ConfiguredJsonValueCodec,
+        Schema

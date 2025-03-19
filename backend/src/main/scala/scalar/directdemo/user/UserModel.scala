@@ -1,6 +1,15 @@
 package scalar.directdemo.user
 
-import com.augustnagro.magnum.{Frag, PostgresDbType, Repo, Spec, SqlName, SqlNameMapper, Table, TableInfo}
+import com.augustnagro.magnum.{
+  Frag,
+  PostgresDbType,
+  Repo,
+  Spec,
+  SqlName,
+  SqlNameMapper,
+  Table,
+  TableInfo
+}
 import com.password4j.{Argon2Function, Password}
 import scalar.directdemo.infrastructure.Magnum.{*, given}
 import scalar.directdemo.user.User.PasswordHashing
@@ -24,21 +33,31 @@ class UserModel:
     Spec[User].where(sql"${u.loginLowerCase} = $login")
   )
   def findByLoginOrEmail(loginOrEmail: LowerCased)(using DbTx): Option[User] =
-    findBy(Spec[User].where(sql"${u.loginLowerCase} = ${loginOrEmail: String} OR ${u.emailLowerCase} = $loginOrEmail"))
+    findBy(
+      Spec[User].where(
+        sql"${u.loginLowerCase} = ${loginOrEmail: String} OR ${u.emailLowerCase} = $loginOrEmail"
+      )
+    )
 
   private def findBy(by: Spec[User])(using DbTx): Option[User] =
     userRepo.findAll(by).headOption
 
   def updatePassword(userId: Id[User], newPassword: Hashed)(using DbTx): Unit =
-    sql"""UPDATE $u SET ${u.passwordHash} = $newPassword WHERE ${u.id} = $userId""".update.run().discard
+    sql"""UPDATE $u SET ${u.passwordHash} = $newPassword WHERE ${u.id} = $userId""".update
+      .run()
+      .discard
 
-  def updateLogin(userId: Id[User], newLogin: String, newLoginLowerCase: LowerCased)(using DbTx): Unit =
+  def updateLogin(userId: Id[User], newLogin: String, newLoginLowerCase: LowerCased)(using
+      DbTx
+  ): Unit =
     sql"""UPDATE $u SET ${u.login} = $newLogin, login_lowercase = ${newLoginLowerCase: String} WHERE ${u.id} = $userId""".update
       .run()
       .discard
 
   def updateEmail(userId: Id[User], newEmail: LowerCased)(using DbTx): Unit =
-    sql"""UPDATE $u SET ${u.emailLowerCase} = $newEmail WHERE ${u.id} = $userId""".update.run().discard
+    sql"""UPDATE $u SET ${u.emailLowerCase} = $newEmail WHERE ${u.id} = $userId""".update
+      .run()
+      .discard
 
 end UserModel
 
@@ -53,14 +72,22 @@ case class User(
     createdOn: Instant
 ):
   def verifyPassword(password: String): PasswordVerificationStatus =
-    if (Password.check(password, passwordHash) `with` PasswordHashing.Argon2) PasswordVerificationStatus.Verified
+    if (Password.check(password, passwordHash) `with` PasswordHashing.Argon2)
+      PasswordVerificationStatus.Verified
     else PasswordVerificationStatus.VerificationFailed
 end User
 
 object User:
   object PasswordHashing:
     val Argon2: Argon2Function =
-      Argon2Function.getInstance(MemoryInKib, NumberOfIterations, LevelOfParallelism, LengthOfTheFinalHash, Type, Version)
+      Argon2Function.getInstance(
+        MemoryInKib,
+        NumberOfIterations,
+        LevelOfParallelism,
+        LengthOfTheFinalHash,
+        Type,
+        Version
+      )
 
     object Argon2Config:
       val MemoryInKib = 12
@@ -71,5 +98,6 @@ object User:
       val Version = 19
   end PasswordHashing
 
-  def hashPassword(password: String): Hashed = Password.hash(password).`with`(PasswordHashing.Argon2).getResult.asHashed
+  def hashPassword(password: String): Hashed =
+    Password.hash(password).`with`(PasswordHashing.Argon2).getResult.asHashed
 end User

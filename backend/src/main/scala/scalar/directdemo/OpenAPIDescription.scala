@@ -10,6 +10,8 @@ object OpenAPIDescription:
   val Version = "1.0"
 
 @main def writeOpenAPIDescription(path: String): Unit =
-  val yaml = OpenAPIDocsInterpreter().toOpenAPI(Dependencies.endpointsForDocs, OpenAPIDescription.Title, OpenAPIDescription.Version).toYaml
+  val yaml = OpenAPIDocsInterpreter()
+    .toOpenAPI(Dependencies.endpointsForDocs, OpenAPIDescription.Title, OpenAPIDescription.Version)
+    .toYaml
   Files.writeString(Paths.get(path), yaml)
   println(s"OpenAPI description document written to: $path")

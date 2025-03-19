@@ -25,7 +25,9 @@ class UserService(
   private val EmailAlreadyUsed = "E-mail already in use!"
   private val IncorrectLoginOrPassword = "Incorrect login/email or password"
 
-  def registerNewUser(login: String, email: String, password: String)(using DbTx): Either[Fail, ApiKey] =
+  def registerNewUser(login: String, email: String, password: String)(using
+      DbTx
+  ): Either[Fail, ApiKey] =
     val loginClean = login.trim()
     val emailClean = email.trim()
 
@@ -40,7 +42,14 @@ class UserService(
     def doRegister(): ApiKey =
       val id = idGenerator.nextId[User]()
       val now = clock.now()
-      val user = User(id, loginClean, loginClean.toLowerCased, emailClean.toLowerCased, User.hashPassword(password), now)
+      val user = User(
+        id,
+        loginClean,
+        loginClean.toLowerCased,
+        emailClean.toLowerCased,
+        User.hashPassword(password),
+        now
+      )
       val confirmationEmail = emailTemplates.registrationConfirmation(loginClean)
       logger.debug(s"Registering new user: ${user.emailLowerCase}, with id: ${user.id}")
       userModel.insert(user)
@@ -54,9 +63,13 @@ class UserService(
     }
   end registerNewUser
 
-  def findById(id: Id[User])(using DbTx): Either[Fail, User] = userOrNotFound(userModel.findById(id))
+  def findById(id: Id[User])(using DbTx): Either[Fail, User] = userOrNotFound(
+    userModel.findById(id)
+  )
 
-  def login(loginOrEmail: String, password: String, apiKeyValid: Option[Duration])(using DbTx): Either[Fail, ApiKey] = either {
+  def login(loginOrEmail: String, password: String, apiKeyValid: Option[Duration])(using
+      DbTx
+  ): Either[Fail, ApiKey] = either {
     val loginOrEmailClean = loginOrEmail.trim()
     val user = userOrNotFound(userModel.findByLoginOrEmail(loginOrEmailClean.toLowerCased)).ok()
     verifyPassword(user, password, validationErrorMsg = IncorrectLoginOrPassword).ok()
@@ -65,7 +78,9 @@ class UserService(
 
   def logout(id: Id[ApiKey])(using DbTx): Unit = apiKeyService.invalidate(id)
 
-  def changeUser(userId: Id[User], newLogin: String, newEmail: String)(using DbTx): Either[Fail, Unit] =
+  def changeUser(userId: Id[User], newLogin: String, newEmail: String)(using
+      DbTx
+  ): Either[Fail, Unit] =
     val newLoginClean = newLogin.trim()
     val newEmailClean = newEmail.trim()
     val newEmailtoLowerCased = newEmailClean.toLowerCased
@@ -73,7 +88,7 @@ class UserService(
     def changeLogin(): Either[Fail, Boolean] = {
       val newLogintoLowerCased = newLoginClean.toLowerCased
       userModel.findByLogin(newLogintoLowerCased) match {
-        case Some(user) if user.id != userId           => Left(Fail.IncorrectInput(LoginAlreadyUsed))
+        case Some(user) if user.id != userId => Left(Fail.IncorrectInput(LoginAlreadyUsed))
         case Some(user) if user.login == newLoginClean => Right(false)
         case _ =>
           either {
@@ -89,7 +104,7 @@ class UserService(
 
     def changeEmail(): Either[Fail, Boolean] = {
       userModel.findByEmail(newEmailtoLowerCased) match {
-        case Some(user) if user.id != userId                           => Left(Fail.IncorrectInput(EmailAlreadyUsed))
+        case Some(user) if user.id != userId => Left(Fail.IncorrectInput(EmailAlreadyUsed))
         case Some(user) if user.emailLowerCase == newEmailtoLowerCased => Right(false)
         case _ =>
           either {
@@ -115,15 +130,22 @@ class UserService(
     }
   end changeUser
 
-  def changePassword(userId: Id[User], currentPassword: String, newPassword: String)(using DbTx): Either[Fail, ApiKey] =
+  def changePassword(userId: Id[User], currentPassword: String, newPassword: String)(using
+      DbTx
+  ): Either[Fail, ApiKey] =
     def validateUserPassword(userId: Id[User], currentPassword: String): Either[Fail, User] = {
       for {
         user <- userOrNotFound(userModel.findById(userId))
-        _ <- verifyPassword(user, currentPassword, validationErrorMsg = "Incorrect current password")
+        _ <- verifyPassword(
+          user,
+          currentPassword,
+          validationErrorMsg = "Incorrect current password"
+        )
       } yield user
     }
 
-    def validateNewPassword(): Either[Fail, Unit] = UserValidator(None, None, Some(newPassword)).result
+    def validateNewPassword(): Either[Fail, Unit] =
+      UserValidator(None, None, Some(newPassword)).result
 
     def updateUserPassword(user: User, newPassword: String): Unit =
       logger.debug(s"Changing password for user: ${user.id}")
@@ -148,14 +170,23 @@ class UserService(
     case None       => Left(Fail.Unauthorized(IncorrectLoginOrPassword))
   }
 
-  private def verifyPassword(user: User, password: String, validationErrorMsg: String): Either[Fail, Unit] =
-    if user.verifyPassword(password) == PasswordVerificationStatus.Verified then Right(()) else Left(Fail.Unauthorized(validationErrorMsg))
+  private def verifyPassword(
+      user: User,
+      password: String,
+      validationErrorMsg: String
+  ): Either[Fail, Unit] =
+    if user.verifyPassword(password) == PasswordVerificationStatus.Verified then Right(())
+    else Left(Fail.Unauthorized(validationErrorMsg))
 end UserService
 
 object UserValidator:
   val MinLoginLength = 3
 
-case class UserValidator(loginOpt: Option[String], emailOpt: Option[String], passwordOpt: Option[String]):
+case class UserValidator(
+    loginOpt: Option[String],
+    emailOpt: Option[String],
+    passwordOpt: Option[String]
+):
   private val ValidationOk = Right(())
 
   private val emailRegex =
@@ -170,14 +201,16 @@ case class UserValidator(loginOpt: Option[String], emailOpt: Option[String], pas
   private def validateLogin(loginOpt: Option[String]): Either[String, Unit] =
     loginOpt.map(_.trim) match {
       case Some(login) =>
-        if (login.length >= UserValidator.MinLoginLength) ValidationOk else Left("Login is too short!")
+        if (login.length >= UserValidator.MinLoginLength) ValidationOk
+        else Left("Login is too short!")
       case None => ValidationOk
     }
 
   private def validateEmail(emailOpt: Option[String]): Either[String, Unit] =
     emailOpt.map(_.trim) match {
       case Some(email) =>
-        if (emailRegex.findFirstMatchIn(email).isDefined) ValidationOk else Left("Invalid e-mail format!")
+        if (emailRegex.findFirstMatchIn(email).isDefined) ValidationOk
+        else Left("Invalid e-mail format!")
       case None => ValidationOk
     }
 

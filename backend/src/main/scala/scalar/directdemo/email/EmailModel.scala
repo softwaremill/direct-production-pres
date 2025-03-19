@@ -10,16 +10,23 @@ class EmailModel:
   private val emailRepo = Repo[ScheduledEmails, ScheduledEmails, Id[Email]]
 
   def insert(email: Email)(using DbTx): Unit = emailRepo.insert(ScheduledEmails(email))
-  def find(limit: Int)(using DbTx): Vector[Email] = emailRepo.findAll(Spec[ScheduledEmails].limit(limit)).map(_.toEmail)
+  def find(limit: Int)(using DbTx): Vector[Email] =
+    emailRepo.findAll(Spec[ScheduledEmails].limit(limit)).map(_.toEmail)
   def count()(using DbTx): Long = emailRepo.count
   def delete(ids: Vector[Id[Email]])(using DbTx): Unit = emailRepo.deleteAllById(ids).discard
 
 @Table(PostgresDbType, SqlNameMapper.CamelToSnakeCase)
-private case class ScheduledEmails(id: Id[Email], recipient: String, subject: String, content: String):
+private case class ScheduledEmails(
+    id: Id[Email],
+    recipient: String,
+    subject: String,
+    content: String
+):
   def toEmail: Email = Email(id, EmailData(recipient, EmailSubjectContent(subject, content)))
 
 private object ScheduledEmails:
-  def apply(email: Email): ScheduledEmails = ScheduledEmails(email.id, email.data.recipient, email.data.subject, email.data.content)
+  def apply(email: Email): ScheduledEmails =
+    ScheduledEmails(email.id, email.data.recipient, email.data.subject, email.data.content)
 
 case class Email(id: Id[Email], data: EmailData)
 

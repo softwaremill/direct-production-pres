@@ -1,7 +1,7 @@
 package scalar.directdemo
 
-/** Base class for all failures in the application. The failures are translated to HTTP API results in the
-  * [[scalar.directdemo.http.Http]] class.
+/** Base class for all failures in the application. The failures are translated to HTTP API results
+  * in the [[scalar.directdemo.http.Http]] class.
   *
   * The class hierarchy is not sealed and can be extended as required by specific functionalities.
   */

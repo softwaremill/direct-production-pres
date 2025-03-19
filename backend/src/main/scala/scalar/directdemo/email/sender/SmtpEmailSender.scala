@@ -11,7 +11,8 @@ import javax.mail.{Address, Message, Session, Transport}
 /** Sends emails synchronously using SMTP. */
 class SmtpEmailSender(config: SmtpConfig) extends EmailSender with Logging:
   def apply(email: EmailData): Unit =
-    val emailToSend = new SmtpEmailSender.EmailDescription(List(email.recipient), email.content, email.subject)
+    val emailToSend =
+      new SmtpEmailSender.EmailDescription(List(email.recipient), email.content, email.subject)
     SmtpEmailSender.send(
       config.host,
       config.port,
@@ -97,8 +98,14 @@ object SmtpEmailSender:
   private def sendEmail(transport: Transport, m: MimeMessage): Unit =
     transport.sendMessage(m, m.getAllRecipients)
 
-  private def connectToSmtpServer(transport: Transport, smtpUsername: String, smtpPassword: String): Unit =
-    if smtpUsername != null && smtpUsername.nonEmpty then transport.connect(smtpUsername, smtpPassword) else transport.connect()
+  private def connectToSmtpServer(
+      transport: Transport,
+      smtpUsername: String,
+      smtpPassword: String
+  ): Unit =
+    if smtpUsername != null && smtpUsername.nonEmpty then
+      transport.connect(smtpUsername, smtpPassword)
+    else transport.connect()
 
   private def convertStringEmailsToAddresses(emails: Array[String]): Array[Address] =
     emails.map(new InternetAddress(_))
@@ -111,5 +118,6 @@ object SmtpEmailSender:
       ccEmails: Array[String],
       bccEmails: Array[String]
   ):
-    def this(emails: List[String], message: String, subject: String) = this(emails.toArray, message, subject, Array(), Array(), Array())
+    def this(emails: List[String], message: String, subject: String) =
+      this(emails.toArray, message, subject, Array(), Array(), Array())
 end SmtpEmailSender

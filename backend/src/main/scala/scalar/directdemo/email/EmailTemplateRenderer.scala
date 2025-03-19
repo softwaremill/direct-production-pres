@@ -3,11 +3,17 @@ package scalar.directdemo.email
 import scala.io.Source
 
 object EmailTemplateRenderer:
-  def apply(templateNameWithoutExtension: String, params: Map[String, String]): EmailSubjectContent =
+  def apply(
+      templateNameWithoutExtension: String,
+      params: Map[String, String]
+  ): EmailSubjectContent =
     val template = prepareTemplate(templateNameWithoutExtension, params)
     addSignature(splitToContentAndSubject(template))
 
-  private def prepareTemplate(templateNameWithoutExtension: String, params: Map[String, String]): String =
+  private def prepareTemplate(
+      templateNameWithoutExtension: String,
+      params: Map[String, String]
+  ): String =
     val source = Source
       .fromURL(getClass.getResource(s"/templates/email/$templateNameWithoutExtension.txt"), "UTF-8")
 

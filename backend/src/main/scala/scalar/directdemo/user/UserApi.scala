@@ -13,33 +13,44 @@ import sttp.tapir.*
 import java.time.Instant
 import scala.concurrent.duration.*
 
-class UserApi(auth: Auth[ApiKey], userService: UserService, db: DB, metrics: Metrics) extends ServerEndpoints:
+class UserApi(auth: Auth[ApiKey], userService: UserService, db: DB, metrics: Metrics)
+    extends ServerEndpoints:
   import UserApi._
 
   // endpoint implementations
 
   private val registerUserServerEndpoint = registerUserEndpoint.handle { data =>
-    val apiKeyResult = db.transactEither(userService.registerNewUser(data.login, data.email, data.password))
+    val apiKeyResult =
+      db.transactEither(userService.registerNewUser(data.login, data.email, data.password))
     metrics.registeredUsersCounter.add(1)
     apiKeyResult.map(apiKey => Register_OUT(apiKey.id.toString))
   }
 
   private val loginServerEndpoint = loginEndpoint.handle { data =>
     val apiKeyResult =
-      db.transactEither(userService.login(data.loginOrEmail, data.password, data.apiKeyValidHours.map(h => Duration(h.toLong, HOURS))))
+      db.transactEither(
+        userService.login(
+          data.loginOrEmail,
+          data.password,
+          data.apiKeyValidHours.map(h => Duration(h.toLong, HOURS))
+        )
+      )
     apiKeyResult.map(apiKey => Login_OUT(apiKey.id.toString))
   }
 
-  private def authedEndpoint[I, O](e: Endpoint[Id[ApiKey], I, Fail, O, Any]) = e.handleSecurity(authData => auth(authData))
+  private def authedEndpoint[I, O](e: Endpoint[Id[ApiKey], I, Fail, O, Any]) =
+    e.handleSecurity(authData => auth(authData))
 
   private val logoutServerEndpoint = authedEndpoint(logoutEndpoint).handleSuccess { _ => data =>
     db.transactEither(Right(userService.logout(data.apiKey.asId[ApiKey])))
     Logout_OUT()
   }
 
-  private val changePasswordServerEndpoint = authedEndpoint(changePasswordEndpoint).handle { id => data =>
-    val apiKeyResult = db.transactEither(userService.changePassword(id, data.currentPassword, data.newPassword))
-    apiKeyResult.map(apiKey => ChangePassword_OUT(apiKey.id.toString))
+  private val changePasswordServerEndpoint = authedEndpoint(changePasswordEndpoint).handle {
+    id => data =>
+      val apiKeyResult =
+        db.transactEither(userService.changePassword(id, data.currentPassword, data.newPassword))
+      apiKeyResult.map(apiKey => ChangePassword_OUT(apiKey.id.toString))
   }
 
   private val getUserServerEndpoint = authedEndpoint(getUserEndpoint).handle { id => (_: Unit) =>
@@ -106,13 +117,19 @@ object UserApi extends EndpointsForDocs:
 
   //
 
-  case class Register_IN(login: String, email: String, password: String) derives ConfiguredJsonValueCodec, Schema
+  case class Register_IN(login: String, email: String, password: String)
+      derives ConfiguredJsonValueCodec,
+        Schema
   case class Register_OUT(apiKey: String) derives ConfiguredJsonValueCodec, Schema
 
-  case class ChangePassword_IN(currentPassword: String, newPassword: String) derives ConfiguredJsonValueCodec, Schema
+  case class ChangePassword_IN(currentPassword: String, newPassword: String)
+      derives ConfiguredJsonValueCodec,
+        Schema
   case class ChangePassword_OUT(apiKey: String) derives ConfiguredJsonValueCodec, Schema
 
-  case class Login_IN(loginOrEmail: String, password: String, apiKeyValidHours: Option[Int]) derives ConfiguredJsonValueCodec, Schema
+  case class Login_IN(loginOrEmail: String, password: String, apiKeyValidHours: Option[Int])
+      derives ConfiguredJsonValueCodec,
+        Schema
   case class Login_OUT(apiKey: String) derives ConfiguredJsonValueCodec, Schema
 
   case class Logout_IN(apiKey: String) derives ConfiguredJsonValueCodec, Schema
@@ -121,5 +138,7 @@ object UserApi extends EndpointsForDocs:
   case class UpdateUser_IN(login: String, email: String) derives ConfiguredJsonValueCodec, Schema
   case class UpdateUser_OUT() derives ConfiguredJsonValueCodec, Schema
 
-  case class GetUser_OUT(login: String, email: String, createdOn: Instant) derives ConfiguredJsonValueCodec, Schema
+  case class GetUser_OUT(login: String, email: String, createdOn: Instant)
+      derives ConfiguredJsonValueCodec,
+        Schema
 end UserApi

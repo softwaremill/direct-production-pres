@@ -9,7 +9,8 @@ import scalar.directdemo.util.{Clock, IdGenerator}
 import java.time.temporal.ChronoUnit
 import scala.concurrent.duration.Duration
 
-class ApiKeyService(apiKeyModel: ApiKeyModel, idGenerator: IdGenerator, clock: Clock) extends Logging:
+class ApiKeyService(apiKeyModel: ApiKeyModel, idGenerator: IdGenerator, clock: Clock)
+    extends Logging:
   def create(userId: Id[User], valid: Duration)(using DbTx): ApiKey =
     val id = idGenerator.nextId[ApiKey]()
     val now = clock.now()

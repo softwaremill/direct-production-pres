@@ -43,7 +43,9 @@ object PasswordResetApi extends EndpointsForDocs:
 
   //
 
-  case class PasswordReset_IN(code: String, password: String) derives ConfiguredJsonValueCodec, Schema
+  case class PasswordReset_IN(code: String, password: String)
+      derives ConfiguredJsonValueCodec,
+        Schema
   case class PasswordReset_OUT() derives ConfiguredJsonValueCodec, Schema
 
   case class ForgotPassword_IN(loginOrEmail: String) derives ConfiguredJsonValueCodec, Schema
