@@ -17,7 +17,8 @@ Code for the talk from Scalar 2025. The video is available here: https://www.you
 5. You can now try calling the trip service via OpenAPI. Once you do that, you can check in the Grafana dashboard if
    the trace shows up - after a couple of seconds. Go to "explore" from the "hamburger" menu, then switch from
    Prometheus to Tempo, switch to "Search" and take a look at the available traces.
-6. Finally, run `./frontend-start.sh`. This should open your default browser with `http://localhost:8081/`. Go to
-   `http://localhost:8081/trip` and click the button - the backend service should be called.
+6. Finally, copy `ui/.env.example` as `ui/.env` and run `./frontend-start.sh`. This should open your default browser
+   with `http://localhost:8081/`. Go to `http://localhost:8081/trip` and click the button - the backend service should
+   be called.
 7. You might also open Kafka's control center, choose the `trips` topic, then the "Messages" tab, to view the result
    of the background streaming.
