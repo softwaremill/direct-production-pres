@@ -27,7 +27,7 @@ import scalar.directdemo.travel.{StreamToKafkaService, TravelApi}
 import sttp.client4.SyncBackend
 import sttp.client4.httpclient.HttpClientSyncBackend
 import sttp.client4.logging.slf4j.Slf4jLoggingBackend
-import sttp.client4.opentelemetry.{OpenTelemetryMetricsBackend, OpenTelemetryTracingSyncBackend}
+import sttp.client4.opentelemetry.{OpenTelemetryMetricsBackend, OpenTelemetryTracingBackend}
 import sttp.tapir.AnyEndpoint
 
 case class Dependencies(
@@ -54,7 +54,7 @@ object Dependencies:
     val sttpBackend = useInScope(
       Slf4jLoggingBackend(
         OpenTelemetryMetricsBackend(
-          OpenTelemetryTracingSyncBackend(HttpClientSyncBackend(), otel),
+          OpenTelemetryTracingBackend(HttpClientSyncBackend(), otel),
           otel
         )
       )

@@ -10,9 +10,9 @@ import scala.sys.process.Process
 import complete.DefaultParsers._
 
 val password4jVersion = "1.8.2"
-val sttpVersion = "4.0.0-RC1"
-val tapirVersion = "1.11.19"
-val oxVersion = "0.5.13"
+val sttpVersion = "4.0.9"
+val tapirVersion = "1.11.37"
+val oxVersion = "1.0.0-RC1"
 val otelVersion = "1.48.0"
 val otelInstrumentationVersion = "2.8.0-alpha"
 
@@ -93,7 +93,8 @@ lazy val uiDirectory = settingKey[File]("Path to the ui project directory")
 lazy val updateYarn = taskKey[Unit]("Update yarn")
 lazy val yarnTask = inputKey[Unit]("Run yarn with arguments")
 lazy val copyWebapp = taskKey[Unit]("Copy webapp")
-lazy val generateOpenAPIDescription = taskKey[Unit]("Generate the OpenAPI description for the HTTP API")
+lazy val generateOpenAPIDescription =
+  taskKey[Unit]("Generate the OpenAPI description for the HTTP API")
 
 lazy val commonSettings = Seq(
   organization := "scalar.directdemo",
@@ -136,13 +137,15 @@ lazy val fatJarSettings = Seq(
   assembly := assembly.dependsOn(copyWebapp).value,
   assembly / assemblyMergeStrategy := {
     // SwaggerUI: https://tapir.softwaremill.com/en/latest/docs/openapi.html#using-swaggerui-with-sbt-assembly
-    case PathList("META-INF", "maven", "org.webjars", "swagger-ui", "pom.properties") => MergeStrategy.singleOrError
-    case PathList("META-INF", "resources", "webjars", "swagger-ui", _*)               => MergeStrategy.singleOrError
+    case PathList("META-INF", "maven", "org.webjars", "swagger-ui", "pom.properties") =>
+      MergeStrategy.singleOrError
+    case PathList("META-INF", "resources", "webjars", "swagger-ui", _*) =>
+      MergeStrategy.singleOrError
     // other
     case PathList(ps @ _*) if ps.last endsWith "io.netty.versions.properties" => MergeStrategy.first
-    case PathList(ps @ _*) if ps.last endsWith "pom.properties"               => MergeStrategy.discard
-    case PathList(ps @ _*) if ps.last endsWith "module-info.class"            => MergeStrategy.discard
-    case PathList(ps @ _*) if ps.last endsWith "okio.kotlin_module"           => MergeStrategy.discard
+    case PathList(ps @ _*) if ps.last endsWith "pom.properties"     => MergeStrategy.discard
+    case PathList(ps @ _*) if ps.last endsWith "module-info.class"  => MergeStrategy.discard
+    case PathList(ps @ _*) if ps.last endsWith "okio.kotlin_module" => MergeStrategy.discard
     case x =>
       val oldStrategy = (assembly / assemblyMergeStrategy).value
       oldStrategy(x)
@@ -156,11 +159,15 @@ lazy val dockerSettings = Seq(
   dockerUsername := Some("softwaremill"),
   dockerUpdateLatest := true,
   Docker / stage := (Docker / stage).dependsOn(copyWebapp).value,
-  Docker / version := git.gitDescribedVersion.value.getOrElse(git.formattedShaVersion.value.getOrElse("latest")),
+  Docker / version := git.gitDescribedVersion.value
+    .getOrElse(git.formattedShaVersion.value.getOrElse("latest")),
   git.uncommittedSignifier := Some("dirty"),
   ThisBuild / git.formattedShaVersion := {
     val base = git.baseVersion.?.value
-    val suffix = git.makeUncommittedSignifierSuffix(git.gitUncommittedChanges.value, git.uncommittedSignifier.value)
+    val suffix = git.makeUncommittedSignifierSuffix(
+      git.gitUncommittedChanges.value,
+      git.uncommittedSignifier.value
+    )
     git.gitHeadCommit.value.map { sha =>
       git.defaultFormatShaVersion(base, sha.take(7), suffix)
     }
@@ -204,7 +211,9 @@ lazy val backend: Project = (project in file("backend"))
       streams.value.log.info(s"Copying the webapp resources from $source to $target")
       IO.copyDirectory(source, target)
     },
-    copyWebapp := copyWebapp.dependsOn(Def.sequential(generateOpenAPIDescription, yarnTask.toTask(" build"))).value,
+    copyWebapp := copyWebapp
+      .dependsOn(Def.sequential(generateOpenAPIDescription, yarnTask.toTask(" build")))
+      .value,
     // used by backend-start.sh, to restart the application when sources change
     reStart := {
       generateOpenAPIDescription.value
