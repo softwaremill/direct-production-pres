@@ -95,24 +95,26 @@ lazy val yarnTask = inputKey[Unit]("Run yarn with arguments")
 lazy val copyWebapp = taskKey[Unit]("Copy webapp")
 lazy val generateOpenAPIDescription =
   taskKey[Unit]("Generate the OpenAPI description for the HTTP API")
+lazy val reStart =
+  taskKey[Unit]("(Re)starts the backend in the background; use `~backend/reStart` to restart on source changes")
+lazy val reStop = taskKey[Unit]("Stops the backend started with reStart")
 
-lazy val commonSettings = Seq(
-  organization := "scalar.directdemo",
-  scalaVersion := "3.6.4",
-  uiDirectory := (ThisBuild / baseDirectory).value / uiProjectName,
-  updateYarn := {
-    streams.value.log("Updating npm/yarn dependencies")
-    haltOnCmdResultError(Process("yarn install", uiDirectory.value).!)
-  },
-  yarnTask := {
-    val taskName = spaceDelimited("<arg>").parsed.mkString(" ")
-    updateYarn.value
-    val localYarnCommand = "yarn " + taskName
-    def runYarnTask() = Process(localYarnCommand, uiDirectory.value).!
-    streams.value.log("Running yarn task: " + taskName)
-    haltOnCmdResultError(runYarnTask())
-  }
-)
+organization := "scalar.directdemo"
+scalaVersion := "3.6.4"
+uiDirectory := (ThisBuild / baseDirectory).value / uiProjectName
+// the yarn tasks have side effects, so they can't be cached (sbt 2 caches task results by default)
+updateYarn := Def.uncached {
+  streams.value.log.info("Updating npm/yarn dependencies")
+  haltOnCmdResultError(Process("yarn install", uiDirectory.value).!)
+}
+yarnTask := Def.uncached {
+  val taskName = spaceDelimited("<arg>").parsed.mkString(" ")
+  updateYarn.value
+  val localYarnCommand = "yarn " + taskName
+  def runYarnTask() = Process(localYarnCommand, uiDirectory.value).!
+  streams.value.log.info("Running yarn task: " + taskName)
+  haltOnCmdResultError(runYarnTask())
+}
 
 lazy val buildInfoSettings = Seq(
   buildInfoKeys := Seq[BuildInfoKey](
@@ -134,7 +136,7 @@ lazy val buildInfoSettings = Seq(
 
 lazy val fatJarSettings = Seq(
   assembly / assemblyJarName := "directdemo.jar",
-  assembly := assembly.dependsOn(copyWebapp).value,
+  assembly := Def.uncached(assembly.dependsOn(copyWebapp).value),
   assembly / assemblyMergeStrategy := {
     // SwaggerUI: https://tapir.softwaremill.com/en/latest/docs/openapi.html#using-swaggerui-with-sbt-assembly
     case PathList("META-INF", "maven", "org.webjars", "swagger-ui", "pom.properties") =>
@@ -142,10 +144,10 @@ lazy val fatJarSettings = Seq(
     case PathList("META-INF", "resources", "webjars", "swagger-ui", _*) =>
       MergeStrategy.singleOrError
     // other
-    case PathList(ps @ _*) if ps.last endsWith "io.netty.versions.properties" => MergeStrategy.first
-    case PathList(ps @ _*) if ps.last endsWith "pom.properties"     => MergeStrategy.discard
-    case PathList(ps @ _*) if ps.last endsWith "module-info.class"  => MergeStrategy.discard
-    case PathList(ps @ _*) if ps.last endsWith "okio.kotlin_module" => MergeStrategy.discard
+    case PathList(ps*) if ps.last.endsWith("io.netty.versions.properties") => MergeStrategy.first
+    case PathList(ps*) if ps.last.endsWith("pom.properties")               => MergeStrategy.discard
+    case PathList(ps*) if ps.last.endsWith("module-info.class")            => MergeStrategy.discard
+    case PathList(ps*) if ps.last.endsWith("okio.kotlin_module")           => MergeStrategy.discard
     case x =>
       val oldStrategy = (assembly / assemblyMergeStrategy).value
       oldStrategy(x)
@@ -158,7 +160,7 @@ lazy val dockerSettings = Seq(
   Docker / packageName := "directdemo",
   dockerUsername := Some("softwaremill"),
   dockerUpdateLatest := true,
-  Docker / stage := (Docker / stage).dependsOn(copyWebapp).value,
+  Docker / stage := Def.uncached((Docker / stage).dependsOn(copyWebapp).value),
   Docker / version := git.gitDescribedVersion.value
     .getOrElse(git.formattedShaVersion.value.getOrElse("latest")),
   git.uncommittedSignifier := Some("dirty"),
@@ -184,9 +186,10 @@ def now(): String = {
   new SimpleDateFormat("yyyy-MM-dd-hhmmss").format(new Date())
 }
 
-lazy val rootProject = (project in file("."))
-  .settings(commonSettings)
+lazy val root = rootProject
   .settings(name := "directdemo")
+  // in sbt 2, bare settings are applied to all subprojects, while the rename should only run once, for the root project
+  .settings(RenameProject.settings)
   .aggregate(backend, ui)
 
 lazy val backend: Project = (project in file("backend"))
@@ -197,34 +200,54 @@ lazy val backend: Project = (project in file("backend"))
       kafkaDependencies,
     Compile / mainClass := Some("scalar.directdemo.Main"),
     // generates the target/openapi.yaml file which is then used by the UI to generate service stubs
-    generateOpenAPIDescription := Def.taskDyn {
-      val log = streams.value.log
-      val targetPath = ((Compile / target).value / "openapi.yaml").toString
-      Def.task {
-        (Compile / runMain).toTask(s" scalar.directdemo.writeOpenAPIDescription $targetPath").value
-      }
-    }.value,
+    generateOpenAPIDescription := Def.uncached {
+      // in sbt 2, `target` points to target/out/..., while the UI expects the file in backend/target
+      val targetDir = baseDirectory.value / "target"
+      IO.createDirectory(targetDir)
+      val targetPath = (targetDir / "openapi.yaml").toString
+      val converter = fileConverter.value
+      val classpath = (Compile / fullClasspath).value.map(entry => converter.toPath(entry.data))
+      (Compile / run / runner).value
+        .run("scalar.directdemo.writeOpenAPIDescription", classpath, Seq(targetPath), streams.value.log)
+        .get
+    },
     // used by fat-jar and docker builds, to copy the UI files to a single bundle
-    copyWebapp := {
+    copyWebapp := Def.uncached {
       val source = uiDirectory.value / "build"
       val target = (Compile / classDirectory).value / "webapp"
       streams.value.log.info(s"Copying the webapp resources from $source to $target")
       IO.copyDirectory(source, target)
     },
-    copyWebapp := copyWebapp
-      .dependsOn(Def.sequential(generateOpenAPIDescription, yarnTask.toTask(" build")))
-      .value,
+    copyWebapp := Def.uncached(
+      copyWebapp
+        .dependsOn(Def.sequential(generateOpenAPIDescription, yarnTask.toTask(" build")))
+        .value
+    ),
+    // copyWebapp copies the UI files to the class directory: when the jar is packaged (e.g. for Docker), the mappings
+    // are computed from that directory, so the copying has to be done first
+    Compile / packageBin / mappings := Def.uncached((Compile / packageBin / mappings).dependsOn(copyWebapp).value),
+    // using class directories instead of the jar on the classpath (the sbt 2 default): copyWebapp depends on
+    // generateOpenAPIDescription, which needs the backend's classpath; with jars, that would be a cycle (through the
+    // mappings above), and assembly would package the jar before the UI files are copied
+    exportJars := false,
     // used by backend-start.sh, to restart the application when sources change
-    reStart := {
-      generateOpenAPIDescription.value
-      reStart.evaluated
+    reStop := Def.uncached {
+      val jobService = bgJobService.value
+      val thisProject = Select(thisProjectRef.value)
+      jobService.jobs.filter(_.spawningTask.scope.project == thisProject).foreach { job =>
+        jobService.stop(job)
+        // a stopped application exits with a non-zero code, which is expected here
+        scala.util.Try(jobService.waitFor(job))
+      }
     },
+    reStart := Def.uncached(
+      Def.sequential(reStop, generateOpenAPIDescription, (Compile / bgRun).toTask("").map(_ => ())).value
+    ),
     // needed so that a ctrl+c issued when running the backend from the sbt console properly interrupts the application
     run / fork := true,
     scalacOptions ++= List("-Wunused:all", "-Wvalue-discard")
   )
   .enablePlugins(BuildInfoPlugin)
-  .settings(commonSettings)
   .settings(buildInfoSettings)
   .settings(fatJarSettings)
   .enablePlugins(DockerPlugin)
@@ -232,8 +255,12 @@ lazy val backend: Project = (project in file("backend"))
   .settings(dockerSettings)
 
 lazy val ui = (project in file(uiProjectName))
-  .settings(commonSettings)
-  .settings(Test / test := (Test / test).dependsOn(yarnTask.toTask(" test:ci")).value)
+  .settings(
+    // in sbt 2, `test` is incremental and `testFull` runs all tests; the UI tests are run by both
+    Test / test := {
+      yarnTask.toTask(" test:ci").value
+      (Test / test).evaluated
+    },
+    Test / testFull := Def.uncached((Test / testFull).dependsOn(yarnTask.toTask(" test:ci")).value)
+  )
   .settings(cleanFiles += baseDirectory.value / "build")
-
-RenameProject.settings

@@ -48,7 +48,7 @@ object RenameProject {
 
       def info(msg: String) = streams.value.log.info(msg)
 
-      def removeRegexes(regexes: Traversable[String])(sourceString: String, file: File) =
+      def removeRegexes(regexes: Iterable[String])(sourceString: String, file: File) =
         regexes.foldLeft(sourceString)((currentString, regex) => {
           currentString.replaceAll(regex, "")
         })
@@ -63,7 +63,7 @@ object RenameProject {
               file.getName.endsWith(".png"))
         }
 
-      def updateDirContent(root: File, excludes: Seq[String], updateFun: (String, File) => String) {
+      def updateDirContent(root: File, excludes: Seq[String], updateFun: (String, File) => String): Unit = {
         val dirContent = listFiles(notHiddenAndExcluding(excludes))(root)
         for (file <- dirContent) {
           if (file.isDirectory)
@@ -86,21 +86,21 @@ object RenameProject {
         replacements.foldLeft(source)((currentSource, replacementPair) => {
           val (from, to) = replacementPair
           if (currentSource.indexOf(from) != -1)
-            currentSource.replaceAllLiterally(from, to)
+            currentSource.replace(from, to)
           else
             currentSource
         })
 
-      def moveSources(baseDir: File, initialPackage: String, newPackage: String) {
+      def moveSources(baseDir: File, initialPackage: String, newPackage: String): Unit = {
         def appendSubDirs(initialPath: Path, subdirectories: Seq[String]) =
           subdirectories.foldLeft(initialPath)((path, subDir) => path.resolve(subDir))
 
         val scalaRoots = List(List("src", "main", "scala"), List("src", "test", "scala"))
-        val srcPackageDirStrs = initialPackage.split('.')
-        val dstPackageDirStrs = newPackage.split('.')
+        val srcPackageDirStrs = initialPackage.split('.').toSeq
+        val dstPackageDirStrs = newPackage.split('.').toSeq
         val projectSubDirs = ((baseDir * "*") filter { file =>
           !file.isHidden && file.isDirectory
-        }).get
+        }).get()
         for {
           projectSubDir <- projectSubDirs
           scalaRoot <- scalaRoots
